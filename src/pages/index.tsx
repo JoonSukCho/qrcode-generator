@@ -2,7 +2,7 @@ import Head from 'next/head';
 import { Inter } from 'next/font/google';
 import styles from '@/styles/Home.module.css';
 import { QRCodeCanvas } from 'qrcode.react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -15,6 +15,7 @@ export default function Home() {
   const [qrLevel, setQRLevel] = useState('M');
   const [qrLogo, setQRLogo] = useState('');
   const [qrLogoSize, setQRLogoSize] = useState(64);
+  const [useKottonseedLogo, setUseKottonseedLogo] = useState(false);
 
   const downloadQR = () => {
     generateQRCode();
@@ -57,6 +58,7 @@ export default function Home() {
 
       const objectUrl = window.webkitURL.createObjectURL(selectedFile);
       setQRLogo(objectUrl);
+      setUseKottonseedLogo(false);
     }
   };
 
@@ -64,11 +66,19 @@ export default function Home() {
     setQRLogoSize(Number(e.target.value));
   };
 
+  const onChangeUseKottonseedLogo = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setUseKottonseedLogo(e.target.checked);
+    setQRLogo(e.target.checked ? '/kottonseed_logo.png' : '');
+  };
+
   const initLogo = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
       setQRLogo('');
       setQRLogoSize(64);
+      setUseKottonseedLogo(false);
     }
   };
 
@@ -149,6 +159,17 @@ export default function Home() {
               ref={fileInputRef}
               onChange={onChangeFile}
             />
+
+            <div className={styles.use_kottonseed}>
+              <label htmlFor="kottonseed-logo">Use KottonSeed Logo</label>
+              <input
+                id="kottonseed-logo"
+                type="checkbox"
+                className={styles.input_checkbox}
+                checked={useKottonseedLogo}
+                onChange={onChangeUseKottonseedLogo}
+              />
+            </div>
 
             {qrLogo !== '' && (
               <>

@@ -43,6 +43,11 @@
   padding: 4px 8px;
 }
 
+.input_checkbox {
+  width: 24px;
+  height: 24px;
+}
+
 .buttonContainer {
   margin-top: 32px;
   display: flex;
@@ -80,6 +85,14 @@
 
 .sub {
   font-size: 12px;
+}
+
+.use_kottonseed {
+  margin-top: 8px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Tablet and Smaller Desktop */
