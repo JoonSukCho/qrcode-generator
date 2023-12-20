@@ -1,22 +1,59 @@
 import Head from 'next/head';
-import { Inter } from 'next/font/google';
-import styles from '@/styles/Home.module.css';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
+import { ShortUrlResponse } from '../../types/shortUrl';
+import axios from 'axios';
+import {
+  Box,
+  Button,
+  Card,
+  CircularProgress,
+  Container,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Grid,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  OutlinedInput,
+  Radio,
+  RadioGroup,
+  Select,
+  SelectChangeEvent,
+  Stack,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from '@mui/material';
+import styled from '@emotion/styled';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
-const inter = Inter({ subsets: ['latin'] });
+type URL_TYPE = 'originUrl' | 'shortenUrl';
+type LOGO_TYPE = 'none' | 'kottonseed' | 'file';
 
 export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [inputValue, setInputValue] = useState('https://');
+  const [currentTab, setCurrentTab] = useState(0);
+
+  const [originUrlInputValue, setOriginUrlInputValue] = useState('https://');
   const [qrValue, setQRValue] = useState('https://');
   const [qrSize, setQRSize] = useState<number>(300);
-  const [qrLevel, setQRLevel] = useState('M');
+  const [qrLevel, setQRLevel] = useState('Q');
   const [qrLogo, setQRLogo] = useState('');
-  const [qrLogoSize, setQRLogoSize] = useState(64);
-  const [useKottonseedLogo, setUseKottonseedLogo] = useState(false);
+  const [qrLogoSize, setQRLogoSize] = useState(0);
+  const [selectedUrl, setSelectedUrl] = useState<URL_TYPE>('originUrl');
+  const [selectedLogoType, setSelectedLogoType] = useState<LOGO_TYPE>('none');
 
+  const [shortenUrl, setShortenUrl] = useState('');
+  const [isLoadShortenUrl, setIsLoadShortenUrl] = useState(false);
+
+  // QR Code 이미지 다운로드
   const downloadQR = () => {
     generateQRCode();
 
@@ -39,52 +76,113 @@ export default function Home() {
     }, 300);
   };
 
+  const onChangeTab = (e: React.SyntheticEvent, newValue: number) => {
+    setCurrentTab(newValue);
+  };
+
+  // URL 입력 핸들러
+  const onChangeURL = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOriginUrlInputValue(e.target.value);
+  };
+
+  // QR Code 해상도 핸들러
   const onChangeQrSize = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQRSize(Number(e.target.value));
   };
 
-  const onChangeURL = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
-
-  const onChangeLevel = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log(e.target.value);
+  // 레벨 핸들러
+  const onChangeLevel = (e: SelectChangeEvent) => {
     setQRLevel(e.target.value);
   };
 
+  // 로고 파일 업로드 핸들러
   const onChangeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFile = e.target.files[0];
 
       const objectUrl = window.webkitURL.createObjectURL(selectedFile);
       setQRLogo(objectUrl);
-      setUseKottonseedLogo(false);
     }
   };
 
+  // 로고 사이즈 핸들러
   const onChangeLogoSize = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQRLogoSize(Number(e.target.value));
   };
 
-  const onChangeUseKottonseedLogo = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setUseKottonseedLogo(e.target.checked);
-    setQRLogo(e.target.checked ? '/kottonseed_logo.png' : '');
-  };
+  // URL 선택 핸들러
+  const onChangeSelectedUrl = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedValue = e.target.value as URL_TYPE;
+    setSelectedUrl(selectedValue);
 
-  const initLogo = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-      setQRLogo('');
-      setQRLogoSize(64);
-      setUseKottonseedLogo(false);
+    if (selectedValue === 'originUrl') {
+      setQRValue(originUrlInputValue);
+    }
+
+    if (selectedValue === 'shortenUrl') {
+      setQRValue(shortenUrl);
     }
   };
 
-  const generateQRCode = () => {
-    setQRValue(inputValue);
+  // 로고 선택 핸들러
+  const onChangeSelectedLogoType = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedValue = e.target.value as LOGO_TYPE;
+    setSelectedLogoType(selectedValue);
+
+    // 사용 안함
+    if (selectedValue === 'none') {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setQRLogo('');
+      setQRLogoSize(0);
+    }
+
+    if (selectedValue === 'kottonseed') {
+      setQRLogo('/kottonseed_logo.png');
+    }
   };
+
+  // QR Code 생성
+  const generateQRCode = () => {
+    setQRValue(originUrlInputValue);
+  };
+
+  // 단축 URL 생성
+  const generateShortenUrl = async () => {
+    setIsLoadShortenUrl(true);
+
+    try {
+      const res = await axios.get<ShortUrlResponse>('/api/short-url', {
+        params: {
+          originUrl: originUrlInputValue,
+        },
+      });
+
+      setShortenUrl(res.data.result.url);
+    } catch (error) {
+      alert('단축 URL 생성 실패. 유효한 URL 인지 확인해주세요.');
+      console.log(error);
+    } finally {
+      setIsLoadShortenUrl(false);
+    }
+  };
+
+  const onClickCopyToClipBoard = async () => {
+    try {
+      await navigator.clipboard.writeText(shortenUrl);
+      alert('단축 URL이 복사되었습니다.');
+    } catch (error) {
+      alert('복사에 실패하였습니다.');
+    }
+  };
+
+  // 해상도에 따른 로고 사이즈 조정
+  useEffect(() => {
+    if (qrLogo) {
+      setQRLogoSize(Math.floor(qrSize * (20 / 100)));
+    }
+  }, [qrLogo]);
 
   return (
     <>
@@ -94,113 +192,298 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={`${styles.main} ${inter.className}`}>
-        <QRCodeCanvas
-          id="qr-code-canvas"
-          value={qrValue}
-          size={qrSize}
-          level={qrLevel}
-          includeMargin
-          imageSettings={{
-            src: qrLogo,
-            width: qrLogoSize,
-            height: qrLogoSize,
-            x: undefined,
-            y: undefined,
-            excavate: true,
+      <Box
+        sx={{
+          backgroundColor: '#f3f7fa',
+        }}
+      >
+        <Container
+          maxWidth="md"
+          sx={{
+            minHeight: '100vh',
+            padding: 4,
           }}
-        />
-        <div className={styles.qrInformation}>
-          <div className={styles.inputWrapper}>
-            <label htmlFor="qr-size">QRCode Size (px)</label>
-            <input
-              id="qr-size"
-              className={styles.qrInput}
-              type="number"
-              value={qrSize}
-              onChange={onChangeQrSize}
-            />
-
-            <label htmlFor="qr-url" className={styles.mt_8}>
-              URL
-            </label>
-            <input
-              id="qr-url"
-              className={styles.qrInput}
-              type="text"
-              value={inputValue}
-              onChange={onChangeURL}
-            />
-
-            <label htmlFor="qr-level" className={styles.mt_8}>
-              Level
-              <p className={styles.sub}>
-                (QR코드 인식이 잘 안되면, 레벨을 올려보세요)
-              </p>
-            </label>
-            <select
-              id="qr-level"
-              className={styles.qrInput}
-              value={qrLevel}
-              onChange={onChangeLevel}
-            >
-              <option value="L">L (1)</option>
-              <option value="M">M (2)</option>
-              <option value="Q">Q (3)</option>
-              <option value="H">H (4)</option>
-            </select>
-
-            <label htmlFor="qr-logo" className={styles.mt_8}>
-              Logo
-            </label>
-            <input
-              id="qr-logo"
-              type="file"
-              ref={fileInputRef}
-              onChange={onChangeFile}
-            />
-
-            <div className={styles.use_kottonseed}>
-              <label htmlFor="kottonseed-logo">Use KottonSeed Logo</label>
-              <input
-                id="kottonseed-logo"
-                type="checkbox"
-                className={styles.input_checkbox}
-                checked={useKottonseedLogo}
-                onChange={onChangeUseKottonseedLogo}
-              />
-            </div>
-
-            {qrLogo !== '' && (
-              <>
-                <label htmlFor="qr-logo-w" className={styles.mt_8}>
-                  Logo Size (px)
-                </label>
-                <input
-                  id="qr-logo-w"
-                  className={styles.qrInput}
-                  type="number"
-                  min={0}
-                  value={qrLogoSize}
-                  onChange={onChangeLogoSize}
+        >
+          <Grid
+            container
+            columnSpacing={2}
+            direction={{ xs: 'column', sm: 'row' }}
+          >
+            <Grid item xs={7}>
+              <Card
+                variant="outlined"
+                sx={{
+                  position: 'sticky',
+                  top: 24,
+                  padding: 2,
+                }}
+              >
+                <QRCodeCanvas
+                  id="qr-code-canvas"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                  }}
+                  value={qrValue}
+                  size={qrSize}
+                  level={qrLevel}
+                  includeMargin
+                  imageSettings={{
+                    src: qrLogo,
+                    width: qrLogoSize,
+                    height: qrLogoSize,
+                    x: undefined,
+                    y: undefined,
+                    excavate: true,
+                  }}
                 />
-                <button className={styles.button} onClick={initLogo}>
-                  로고 초기화
-                </button>
-              </>
-            )}
-          </div>
 
-          <div className={styles.buttonContainer}>
-            <button className={styles.button} onClick={generateQRCode}>
-              생성하기
-            </button>
-            <a className={styles.button} onClick={downloadQR}>
-              이미지 다운로드
-            </a>
-          </div>
-        </div>
-      </main>
+                <Divider />
+
+                <Stack spacing={1} sx={{ paddingTop: 2 }}>
+                  <FormControl>
+                    <FormLabel id="select-url-radio">URL 선택</FormLabel>
+                    <RadioGroup row name="select-url-radio">
+                      <FormControlLabel
+                        label="원본 URL"
+                        value="originUrl"
+                        control={
+                          <Radio
+                            checked={selectedUrl === 'originUrl'}
+                            onChange={onChangeSelectedUrl}
+                          />
+                        }
+                      />
+                      <FormControlLabel
+                        label="단축 URL"
+                        value="shortenUrl"
+                        control={
+                          <Radio
+                            disabled={shortenUrl === ''}
+                            checked={selectedUrl === 'shortenUrl'}
+                            onChange={onChangeSelectedUrl}
+                          />
+                        }
+                      />
+                    </RadioGroup>
+                  </FormControl>
+                  <Button variant="contained" onClick={downloadQR}>
+                    다운로드
+                  </Button>
+                </Stack>
+              </Card>
+            </Grid>
+
+            <Grid item xs={5}>
+              <Card
+                variant="outlined"
+                sx={{
+                  padding: 2,
+                  paddingTop: 1,
+                }}
+              >
+                <Tabs
+                  value={currentTab}
+                  onChange={onChangeTab}
+                  sx={{ paddingTop: 0 }}
+                >
+                  <Tab label="설정" />
+                  <Tab label="스타일" />
+                </Tabs>
+
+                {/* 설정 탭 */}
+                {currentTab === 0 && (
+                  <Stack spacing={2} sx={{ paddingTop: 2 }}>
+                    <Stack spacing={1}>
+                      <Stack>
+                        <InputLabel htmlFor="qr-url">URL 입력</InputLabel>
+                        <TextField
+                          id="qr-url"
+                          type="text"
+                          size="small"
+                          multiline
+                          maxRows={3}
+                          value={originUrlInputValue}
+                          onChange={onChangeURL}
+                          onBlur={generateQRCode}
+                        />
+                      </Stack>
+
+                      <Stack>
+                        <InputLabel htmlFor="shorten-url">단축 URL</InputLabel>
+                        <OutlinedInput
+                          id="shorten-url"
+                          type="text"
+                          size="small"
+                          value={shortenUrl}
+                          endAdornment={
+                            <InputAdornment position="end">
+                              <IconButton
+                                edge="end"
+                                onClick={onClickCopyToClipBoard}
+                              >
+                                <ContentCopyIcon />
+                              </IconButton>
+                            </InputAdornment>
+                          }
+                        />
+                      </Stack>
+
+                      <Button
+                        onClick={generateShortenUrl}
+                        variant="contained"
+                        disabled={isLoadShortenUrl}
+                      >
+                        {isLoadShortenUrl ? (
+                          <CircularProgress size={24} color="inherit" />
+                        ) : (
+                          '단축 URL 생성하기'
+                        )}
+                      </Button>
+                    </Stack>
+
+                    <Divider />
+
+                    <Stack spacing={2}>
+                      <Stack spacing={1}>
+                        <Stack>
+                          <InputLabel
+                            htmlFor="qr-size"
+                            sx={{ display: 'flex', alignItems: 'center' }}
+                          >
+                            해상도
+                            <Typography variant="caption">(px)</Typography>
+                          </InputLabel>
+                          <TextField
+                            id="qr-size"
+                            type="number"
+                            size="small"
+                            value={qrSize}
+                            onChange={onChangeQrSize}
+                          />
+                        </Stack>
+                        <Stack>
+                          <InputLabel
+                            htmlFor="qr-level"
+                            sx={{ display: 'flex', alignItems: 'center' }}
+                          >
+                            레벨
+                            <Typography variant="caption">
+                              (QR코드 인식이 안되면, 레벨을 올리세요)
+                            </Typography>
+                          </InputLabel>
+                          <Select
+                            id="qr-level"
+                            size="small"
+                            value={qrLevel}
+                            onChange={onChangeLevel}
+                          >
+                            <MenuItem value="L">L (1)</MenuItem>
+                            <MenuItem value="M">M (2)</MenuItem>
+                            <MenuItem value="Q">Q (3)</MenuItem>
+                            <MenuItem value="H">H (4)</MenuItem>
+                          </Select>
+                        </Stack>
+
+                        <Stack>
+                          <FormControl>
+                            <FormLabel id="qr-logo">로고 사용</FormLabel>
+                            <RadioGroup name="qr-logo">
+                              <FormControlLabel
+                                label="사용 안함"
+                                value="none"
+                                control={
+                                  <Radio
+                                    checked={selectedLogoType === 'none'}
+                                    onChange={onChangeSelectedLogoType}
+                                  />
+                                }
+                              />
+                              <FormControlLabel
+                                label="코튼시드 로고"
+                                value="kottonseed"
+                                control={
+                                  <Radio
+                                    checked={selectedLogoType === 'kottonseed'}
+                                    onChange={onChangeSelectedLogoType}
+                                  />
+                                }
+                              />
+                              <FormControlLabel
+                                label="파일"
+                                value="file"
+                                control={
+                                  <Radio
+                                    checked={selectedLogoType === 'file'}
+                                    onChange={onChangeSelectedLogoType}
+                                  />
+                                }
+                              />
+                            </RadioGroup>
+                          </FormControl>
+
+                          {selectedLogoType === 'file' && (
+                            <Button
+                              id="qr-logo"
+                              component="label"
+                              variant="contained"
+                              startIcon={<FileUploadIcon />}
+                              sx={{ marginBottom: 0.5 }}
+                            >
+                              로고 파일 업로드
+                              <VisuallyHiddenInput
+                                type="file"
+                                accept="image/*"
+                                ref={fileInputRef}
+                                onChange={onChangeFile}
+                              />
+                            </Button>
+                          )}
+
+                          {qrLogo !== '' && (
+                            <>
+                              <InputLabel htmlFor="qr-logo-w">
+                                로고 사이즈
+                                <Typography variant="caption">(px)</Typography>
+                              </InputLabel>
+                              <TextField
+                                id="qr-logo-w"
+                                type="number"
+                                size="small"
+                                value={qrLogoSize}
+                                onChange={onChangeLogoSize}
+                              />
+                            </>
+                          )}
+                        </Stack>
+                      </Stack>
+                    </Stack>
+                  </Stack>
+                )}
+
+                {/* 스타일 탭 */}
+                {currentTab === 1 && (
+                  <Stack spacing={2} sx={{ paddingTop: 2 }}>
+                    준비중
+                  </Stack>
+                )}
+              </Card>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
     </>
   );
 }
+
+const VisuallyHiddenInput = styled('input')({
+  clip: 'rect(0 0 0 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  overflow: 'hidden',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  whiteSpace: 'nowrap',
+  width: 1,
+});
