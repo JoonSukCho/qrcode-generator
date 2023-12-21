@@ -15,7 +15,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<any>) => {
         ? process.env.NEXT_PUBLIC_NAVER_CLIENT_SECRET
         : process.env.NAVER_CLIENT_SECRET;
 
-    console.log(originUrl, naverClientId, naverClientSecret);
 
     try {
       const urlRes = await axios.get(
