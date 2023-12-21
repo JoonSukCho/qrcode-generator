@@ -23,6 +23,8 @@ const QRCodeDownload = () => {
     qrLevel,
     qrLogo,
     qrLogoSize,
+    qrFgColor,
+    qrBgColor,
     setUrlType,
     setQRValue,
   } = useQRCode();
@@ -72,6 +74,8 @@ const QRCodeDownload = () => {
         value={qrValue}
         size={qrSize}
         level={qrLevel}
+        bgColor={qrBgColor}
+        fgColor={qrFgColor}
         includeMargin
         imageSettings={{
           src: qrLogo,

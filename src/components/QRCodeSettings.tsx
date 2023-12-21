@@ -313,7 +313,7 @@ const QRCodeSettings = ({}: QRCodeSettingsProps) => {
 
             {qrLogo !== '' && (
               <>
-                <InputLabel htmlFor="qr-logo-w">
+                <InputLabel htmlFor="qr-logo-w" sx={{ paddingTop: 0.5 }}>
                   로고 사이즈
                   <Typography variant="caption">(px)</Typography>
                 </InputLabel>

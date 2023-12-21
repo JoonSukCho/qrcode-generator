@@ -4,6 +4,7 @@ import { Box, Card, Container, Grid, Stack, Tab, Tabs } from '@mui/material';
 import { QRCodeProvider } from '@/components/Provider/QRcodeProvider';
 import QRCodeDownload from '@/components/QRCodeDownload';
 import QRCodeSettings from '@/components/QRCodeSettings';
+import QRCodeStyles from '@/components/QRCodeStyles';
 
 export default function Home() {
   const [currentTab, setCurrentTab] = useState(0);
@@ -64,11 +65,7 @@ export default function Home() {
                   {currentTab === 0 && <QRCodeSettings />}
 
                   {/* 스타일 탭 */}
-                  {currentTab === 1 && (
-                    <Stack spacing={2} sx={{ paddingTop: 2 }}>
-                      준비중
-                    </Stack>
-                  )}
+                  {currentTab === 1 && <QRCodeStyles />}
                 </Card>
               </Grid>
             </Grid>
