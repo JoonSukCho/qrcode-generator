@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Button,
+  Checkbox,
   CircularProgress,
   Divider,
   FormControl,
   FormControlLabel,
+  FormGroup,
   FormHelperText,
   FormLabel,
   IconButton,
@@ -42,6 +44,7 @@ const QRCodeSettings = ({}: QRCodeSettingsProps) => {
     qrLevel,
     qrLogo,
     qrLogoSize,
+    qrLogoExcavate,
     setOriginUrl,
     setShortenUrl,
     setQRValue,
@@ -49,6 +52,7 @@ const QRCodeSettings = ({}: QRCodeSettingsProps) => {
     setQRLevel,
     setQRLogo,
     setQRLogoSize,
+    setQRLogoExcavate,
   } = useQRCode();
 
   const [selectedLogoType, setSelectedLogoType] = useState<LOGO_TYPE>('none');
@@ -107,6 +111,11 @@ const QRCodeSettings = ({}: QRCodeSettingsProps) => {
     if (selectedValue === 'kottonseed') {
       setQRLogo('/kottonseed_logo.png');
     }
+  };
+
+  //   로고 여백 핸들러
+  const onChangeLogoExcavate = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQRLogoExcavate(e.target.checked);
   };
 
   const generateQRCode = () => {
@@ -324,6 +333,17 @@ const QRCodeSettings = ({}: QRCodeSettingsProps) => {
                   value={qrLogoSize}
                   onChange={onChangeLogoSize}
                 />
+                <FormGroup>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={qrLogoExcavate}
+                        onChange={onChangeLogoExcavate}
+                      />
+                    }
+                    label="로고 여백"
+                  />
+                </FormGroup>
               </>
             )}
           </Stack>

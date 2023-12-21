@@ -23,6 +23,7 @@ const QRCodeDownload = () => {
     qrLevel,
     qrLogo,
     qrLogoSize,
+    qrLogoExcavate,
     qrFgColor,
     qrBgColor,
     setUrlType,
@@ -83,7 +84,7 @@ const QRCodeDownload = () => {
           height: qrLogoSize,
           x: undefined,
           y: undefined,
-          excavate: true,
+          excavate: qrLogoExcavate,
         }}
       />
 

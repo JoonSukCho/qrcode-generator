@@ -11,6 +11,7 @@ export const QRCodeContext = createContext<
       qrLevel: QR_LEVEL;
       qrLogo: string;
       qrLogoSize: number;
+      qrLogoExcavate: boolean;
       qrFgColor: string;
       qrBgColor: string;
       setUrlType: Dispatch<SetStateAction<URL_TYPE>>;
@@ -21,6 +22,7 @@ export const QRCodeContext = createContext<
       setQRLevel: Dispatch<SetStateAction<QR_LEVEL>>;
       setQRLogo: Dispatch<SetStateAction<string>>;
       setQRLogoSize: Dispatch<SetStateAction<number>>;
+      setQRLogoExcavate: Dispatch<SetStateAction<boolean>>;
       setQRFgColor: Dispatch<SetStateAction<string>>;
       setQRBgColor: Dispatch<SetStateAction<string>>;
     }
@@ -38,6 +40,7 @@ export const QRCodeProvider = ({ children }: { children: React.ReactNode }) => {
   const [qrLogoSize, setQRLogoSize] = useState(0);
   const [qrFgColor, setQRFgColor] = useState('#000000');
   const [qrBgColor, setQRBgColor] = useState('#ffffff');
+  const [qrLogoExcavate, setQRLogoExcavate] = useState(true);
 
   return (
     <QRCodeContext.Provider
@@ -50,6 +53,7 @@ export const QRCodeProvider = ({ children }: { children: React.ReactNode }) => {
         qrLevel,
         qrLogo,
         qrLogoSize,
+        qrLogoExcavate,
         qrBgColor,
         qrFgColor,
         setOriginUrl,
@@ -60,6 +64,7 @@ export const QRCodeProvider = ({ children }: { children: React.ReactNode }) => {
         setQRLevel,
         setQRLogo,
         setQRLogoSize,
+        setQRLogoExcavate,
         setQRFgColor,
         setQRBgColor,
       }}
